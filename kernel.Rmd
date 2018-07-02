@@ -1,6 +1,8 @@
 ---
 title: "Flavors of Cacao"
-output: html_notebook
+output:
+  html_document:
+    keep_md: true
 ---
 
 # Workbook for the Ggplot lesson
@@ -14,7 +16,7 @@ library(stringr)
 library(data.table)
 
 # read in & clean our data
-chocolateData <- fread("data/flavors_of_cacao.csv") %>%
+chocolateData <- fread("../input/flavors_of_cacao.csv") %>%
     clean_names() %>% # clean the names
     filter(ref != "REF") # remove the first row (which has no data)
 ```
@@ -46,3 +48,75 @@ ggplot(
 
 
 # Bar chart
+
+This is @rtatman's cleaning process...
+
+```{r}
+# create a column with just the first word of the bean_type() cell
+chocolateData$bean_type_simplified <- word(chocolateData$bean_type, 1)
+# remove punctuation
+chocolateData$bean_type_simplified <- gsub('[[:punct:]]', '', chocolateData$bean_type_simplified)
+
+# get a vector of the names of beans in more than 20 times
+commonBeanTypes <- chocolateData %>%
+    select(bean_type_simplified) %>%
+    group_by(bean_type_simplified) %>%
+    count() %>%
+    filter(n > 20) %>%
+    select(bean_type_simplified)
+
+# subset of the dataset with only chocolate bars made using common beans
+chocolateData_commonBeans <- chocolateData %>%
+    filter(bean_type_simplified %in% commonBeanTypes$bean_type_simplified)
+```
+
+The simplest plot...
+
+```{r}
+ggplot(
+  data = chocolateData_commonBeans,
+  aes(x = bean_type_simplified)
+) + geom_bar()
+```
+
+
+
+```{r}
+ggplot(
+  data = chocolateData_commonBeans,
+  aes(x = bean_type_simplified, fill = bean_type_simplified)
+) +
+  geom_bar() +
+  scale_y_log10() + 
+  facet_wrap(~ company_location, dir = 'v')
+```
+This graphic is beyond horrible, though.
+
+# Line charts
+
+```{r}
+# get the mean chocolate rating by year 
+meanRatingByYear <- chocolateData %>%
+    group_by(review_date) %>%
+    summarise(rating = mean(rating))
+```
+
+```{r}
+meanPlot <- ggplot(
+  data = meanRatingByYear,
+  aes(x = review_date, y = rating)
+) +
+  geom_line() +
+  geom_smooth(method = 'lm')
+```
+
+Theme 1
+```{r}
+meanPlot + theme_solarized()
+```
+
+Theme 2
+```{r}
+meanPlot + theme_few()
+```
+
