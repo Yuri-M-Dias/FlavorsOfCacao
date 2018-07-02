@@ -1,0 +1,48 @@
+---
+title: "Flavors of Cacao"
+output: html_notebook
+---
+
+# Workbook for the Ggplot lesson
+
+```{r}
+# libraries we're going to use
+library(tidyverse)
+library(ggthemes)
+library(janitor)
+library(stringr)
+library(data.table)
+
+# read in & clean our data
+chocolateData <- fread("data/flavors_of_cacao.csv") %>%
+    clean_names() %>% # clean the names
+    filter(ref != "REF") # remove the first row (which has no data)
+```
+
+# Scatter plot
+
+```{r}
+# remove percentage signs from cocoa_percent
+chocolateData$cocoa_percent <- parse_number(chocolateData$cocoa_percent)
+
+# automatically detect the types of each column in the data frame
+chocolateData <- type_convert(chocolateData)
+```
+
+```{r}
+ggplot(
+  data = chocolateData,
+  aes(x = cocoa_percent, y = rating, color = factor(review_date))
+) +
+  geom_point() +
+  geom_smooth(method = 'lm', span = 0.8) + 
+  facet_wrap(~ review_date) +
+  labs(
+    title = "More cocoa leads to lower ratings",
+    x = "Cocoa content (percentile)", 
+    y = "Rating (1-5)" 
+  )
+```
+
+
+# Bar chart
